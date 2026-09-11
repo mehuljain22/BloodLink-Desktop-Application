@@ -34,7 +34,12 @@ public final class Theme {
     private Theme() {}
 
     public static void apply() {
-        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignored) {}
+        // Cross-platform (Metal) rather than the system look-and-feel, on purpose.
+        // The Windows and macOS L&Fs ignore setBackground() on buttons, table
+        // headers and combo boxes while still honouring setForeground(), which
+        // leaves white text sitting on a pale native control. Metal honours both,
+        // so BloodLink renders identically everywhere.
+        try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); } catch (Exception ignored) {}
         UIManager.put("Label.font", new Font("SansSerif", Font.PLAIN, 14));
         UIManager.put("Button.font", new Font("SansSerif", Font.BOLD, 13));
         UIManager.put("Table.font", new Font("SansSerif", Font.PLAIN, 13));
@@ -46,6 +51,42 @@ public final class Theme {
         UIManager.put("PasswordField.font", new Font("SansSerif", Font.PLAIN, 14));
         UIManager.put("OptionPane.background", BG);
         UIManager.put("Panel.background", BG);
+
+        // Pin foreground/background pairs explicitly so nothing inherits a
+        // near-invisible default from the platform.
+        UIManager.put("Label.foreground", TEXT);
+        UIManager.put("Panel.foreground", TEXT);
+        UIManager.put("OptionPane.foreground", TEXT);
+        UIManager.put("OptionPane.messageForeground", TEXT);
+
+        UIManager.put("TableHeader.background", MAROON_DEEP);
+        UIManager.put("TableHeader.foreground", Color.WHITE);
+        UIManager.put("Table.background", CARD);
+        UIManager.put("Table.foreground", TEXT);
+
+        UIManager.put("TextField.background", Color.WHITE);
+        UIManager.put("TextField.foreground", TEXT);
+        UIManager.put("TextField.caretForeground", MAROON_DEEP);
+        UIManager.put("PasswordField.background", Color.WHITE);
+        UIManager.put("PasswordField.foreground", TEXT);
+        UIManager.put("TextArea.background", Color.WHITE);
+        UIManager.put("TextArea.foreground", TEXT);
+
+        UIManager.put("ComboBox.background", Color.WHITE);
+        UIManager.put("ComboBox.foreground", TEXT);
+        UIManager.put("ComboBox.selectionBackground", RED);
+        UIManager.put("ComboBox.selectionForeground", Color.WHITE);
+        UIManager.put("List.background", Color.WHITE);
+        UIManager.put("List.foreground", TEXT);
+        UIManager.put("List.selectionBackground", RED);
+        UIManager.put("List.selectionForeground", Color.WHITE);
+
+        UIManager.put("Spinner.background", Color.WHITE);
+        UIManager.put("Spinner.foreground", TEXT);
+        UIManager.put("CheckBox.background", BG);
+        UIManager.put("CheckBox.foreground", TEXT);
+        UIManager.put("ScrollPane.background", CARD);
+        UIManager.put("Viewport.background", CARD);
     }
 
     public static JLabel title(String text) {
@@ -69,37 +110,33 @@ public final class Theme {
         return l;
     }
 
+    /** Solid red fill, white text. */
     public static JButton primary(String text) {
-        JButton b = new JButton(text);
-        b.setBackground(RED);
-        b.setForeground(Color.WHITE);
-        b.setOpaque(true);
-        b.setBorderPainted(false);
-        b.setFocusPainted(false);
+        FlatButton b = new FlatButton(text, RED, MAROON, Color.WHITE, null);
         b.setBorder(new EmptyBorder(10, 16, 10, 16));
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        hover(b, RED, MAROON);
+        b.setFont(new Font("SansSerif", Font.BOLD, 13));
         return b;
     }
 
+    /** White fill, maroon text, thin border. */
     public static JButton secondary(String text) {
-        JButton b = new JButton(text);
-        b.setBackground(Color.WHITE);
-        b.setForeground(MAROON_DEEP);
-        b.setOpaque(true);
-        b.setFocusPainted(false);
-        b.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER), new EmptyBorder(9, 14, 9, 14)));
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        hover(b, Color.WHITE, RED_SOFT);
+        FlatButton b = new FlatButton(text, Color.WHITE, RED_SOFT, MAROON_DEEP, BORDER);
+        b.setBorder(new EmptyBorder(9, 14, 9, 14));
+        b.setFont(new Font("SansSerif", Font.BOLD, 13));
         return b;
     }
 
-    private static void hover(JButton b, Color normal, Color over) {
-        b.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseEntered(java.awt.event.MouseEvent e) { b.setBackground(over); }
-            @Override public void mouseExited(java.awt.event.MouseEvent e) { b.setBackground(normal); }
-        });
+    /** Sidebar navigation item. Active items are red with white text; inactive
+     *  items are transparent so the maroon gradient shows through. */
+    public static FlatButton navItem(String text, boolean active) {
+        FlatButton b = new FlatButton(text,
+                active ? RED : null,
+                active ? RED : MAROON,
+                Color.WHITE, null);
+        b.setHorizontalAlignment(SwingConstants.LEFT);
+        b.setBorder(new EmptyBorder(10, 12, 10, 12));
+        b.setFont(new Font("SansSerif", Font.BOLD, 13));
+        return b;
     }
 
     public static JPanel card() {
@@ -128,6 +165,28 @@ public final class Theme {
         header.setForeground(Color.WHITE);
         header.setFont(new Font("SansSerif", Font.BOLD, 12));
         header.setReorderingAllowed(false);
+
+        // Explicit renderer: some look-and-feels paint their own header and
+        // discard the colours set above, leaving white text on a pale strip.
+        header.setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(JTable t, Object value, boolean selected,
+                                                                     boolean focus, int row, int column) {
+                JLabel l = (JLabel) super.getTableCellRendererComponent(t, value, selected, focus, row, column);
+                l.setOpaque(true);
+                l.setBackground(MAROON_DEEP);
+                l.setForeground(Color.WHITE);
+                l.setFont(new Font("SansSerif", Font.BOLD, 12));
+                l.setHorizontalAlignment(SwingConstants.CENTER);
+                l.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, 0, 0, 1, MAROON), new EmptyBorder(6, 8, 6, 8)));
+                return l;
+            }
+        });
+
+        table.setBackground(CARD);
+        table.setForeground(TEXT);
+        table.setSelectionBackground(RED_SOFT);
+        table.setSelectionForeground(TEXT);
         table.setShowGrid(true);
         table.setGridColor(BORDER);
         table.setFillsViewportHeight(true);
@@ -152,6 +211,7 @@ public final class Theme {
                                                                      boolean focus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(t, value, selected, focus, row, column);
                 String text = String.valueOf(value);
+                c.setBackground(selected ? RED_SOFT : CARD);
                 c.setForeground(statusColour(text));
                 c.setFont(new Font("SansSerif", "pending".equalsIgnoreCase(text) ? Font.PLAIN : Font.BOLD, 12));
                 return c;

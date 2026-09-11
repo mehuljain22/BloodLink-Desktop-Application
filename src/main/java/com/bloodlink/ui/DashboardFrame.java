@@ -3,6 +3,7 @@ package com.bloodlink.ui;
 import com.bloodlink.AppContext;
 import com.bloodlink.model.Role;
 import com.bloodlink.model.User;
+import com.bloodlink.util.FlatButton;
 import com.bloodlink.util.Theme;
 
 import javax.swing.*;
@@ -88,17 +89,8 @@ public final class DashboardFrame extends JFrame {
     }
 
     private JButton navButton(String text) {
-        JButton b = new JButton(text);
-        b.setHorizontalAlignment(SwingConstants.LEFT);
+        FlatButton b = Theme.navItem(text, false);
         b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        b.setForeground(new Color(244, 226, 228));
-        b.setBackground(Theme.MAROON_DEEP);
-        b.setOpaque(false);
-        b.setContentAreaFilled(false);
-        b.setBorderPainted(false);
-        b.setBorder(new EmptyBorder(10, 12, 10, 12));
-        b.setFocusPainted(false);
-        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         b.addActionListener(e -> showPage(text));
         return b;
     }
@@ -152,10 +144,8 @@ public final class DashboardFrame extends JFrame {
         for (Map.Entry<String, JButton> e : nav.entrySet()) {
             boolean active = e.getKey().equals(page);
             JButton b = e.getValue();
-            b.setContentAreaFilled(active);
-            b.setOpaque(active);
-            b.setBackground(active ? Theme.RED : Theme.MAROON_DEEP);
-            b.setForeground(active ? Color.WHITE : new Color(244, 226, 228));
+            if (b instanceof FlatButton f) f.setActive(active);
+            b.repaint();
         }
         content.revalidate();
         content.repaint();

@@ -186,8 +186,19 @@ The password is not stored in plaintext. BloodLink uses **PBKDF2-HMAC-SHA256** w
 
 The interface uses a maroon, red and white palette defined in one place, `util/Theme.java`. Change the constants at the top of that file and the whole application follows.
 
+### Why the look-and-feel is pinned
+
+BloodLink deliberately uses the **cross-platform (Metal) look-and-feel** rather than the system one. The Windows and macOS look-and-feels ignore `setBackground()` on buttons, table headers and combo boxes while still honouring `setForeground()`. That combination leaves white text sitting on a pale native control, so the label becomes unreadable even though the code set both colours correctly.
+
+Two safeguards handle this:
+
+- `util/FlatButton.java` paints its own fill in `paintComponent()`, so no look-and-feel can discard it. Every button in the application uses it.
+- `Theme.styleTable()` installs an explicit header renderer instead of relying on `JTableHeader` colours being respected.
+
+Every text and background pair in the application was measured; the lowest contrast ratio is above 3:1, including table cells in both selected and unselected states.
+
 ```text
-MAROON_DEEP  #4A0C14   sidebar, table headers
+MAROON_DEEP  #4A0C14   sidebar, table headers, header text is white
 MAROON       #6D111C   gradients, hover
 RED          #B21B28   primary accent, active navigation
 RED_SOFT     #FAECED   selection and tinted fills
